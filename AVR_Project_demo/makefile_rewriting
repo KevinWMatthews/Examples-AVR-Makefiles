@@ -1,0 +1,134 @@
+### Documentation ###
+# $(filter <pattern> ..., <text>)
+# Keep only the text that matches the patters.
+
+
+### Target Specific Details ###
+
+MCD=attiny26
+
+#Fill in with what avrdude needs
+PROGRAMMER_MCU=
+
+PROJECTNAME=Demo
+
+#List all source files
+#TODO: Auto-detect
+PRJSRC=main.c
+
+INC=
+
+LIBS=
+
+#Optimization level
+#use s (size opt), 1, 2, 3, 0 (off)
+OPTLEVEL=s
+
+
+### AVR Dude 'writeflash' options ###
+#? ISPMKII
+AVRDUDE_PROGRAMMERID=
+
+#port to which your hardware is attached
+AVRDUDE_PORT=
+
+###################
+### Config Done ###
+###################
+# You shouldn't (in general) need to edit
+# anything below
+
+### Flags ###
+HEXFORMAT=ihex
+
+#compiler flags
+#-Wall  enable all compiler warnings
+#-Wstrict-prototypes  function must be declared with arguments that match the prototype (C only!)
+#-funsigned-bitfields  what are bitfields?
+#-funsigned-char       do we want that?
+#-fpack-struct  pack all structure members together without any holes
+#-fshort-enums  make enums as small as possible
+# -Wa,<assembler_option>,<assembler_option>,<...>
+#   -a[cdghlmns]=<file>  Turn on listings in a variety of ways
+#   -ahlmns=<...>
+#     -ah    include high-level source
+#     -al    include assmebly
+#     -am    include macro expansions
+#     -an    omit forms processing
+#     -as    include symbols
+#     =file  set the name of the listing file
+# $(firstword $(filter %.lst, %(<:.c=.lst)))
+CFLAGS=-I. $(INC) -g -mmcu=$MCU -O$(OPTLEVEL) \
+	-Wall -Wstrict-prototypes                   \
+	-funsigned-bitfields -funsigned-char        \
+	-fpack-struct -fshort-enums                 \
+	-Wa,-ahlms=$(firstword $(filter %.lst, $(<:.c=.lst)))
+
+CPPFLAGS=
+
+# -x  specify the language explicitly
+# -Wa,<assembler_option>,<assembler_option>,<...>
+#   -gstabs  generate stabs debugging information for each assembler line
+ASMFLAGS=-I. $(INC) -Mmcu=$(MCU) \
+	-x assembler-with-cpp          \
+	-Wa,-gstabs,                   \
+	-ahlms=$(firstword $(<:.S=.lst) $(<.s=.lst))
+
+#-Wl  specify that we're setting a linker option since we're accessing the linker indirectly (through gcc)
+#-Map  specify the map file.  Should be -Map= ? Guess not; the AVR manual does this too
+#-lm <library list>  Not sure why this isn't just -l
+LDFLAGS=-Wl-Map,$(TRG).map -mmcu=$(MCU) -lm $(LIBS)
+
+### executables ###
+CC=avr-gcc
+OBJCOPY=avr-objcopy
+OBJDUMP=avr-objdump
+SIZE=avr-size
+AVRDUDE=avrdude
+REMOVE=rm -file
+
+### target names ###
+TRG=$(PROJECTNAME).out
+DUMPTRG=$(PROJECTNAME).s
+
+HEXROMTRG=$(PROJECTNAME).hex
+HEXTRG=$(HEXROMTRG) $(PROJECTNAME).ee.hex
+GCBINITFILE=gdbinit-$(PROJECTNAME)
+
+# Define all object files
+CFILES=$(filter %.c, $(PRJSRC))
+
+OBJDEPS=$(CFILES:.c=.o)
+
+LST=$(filter %.lst, $(OBJDEPS:.o=.lst))
+
+.SUFFIXES: .c \
+  .hex .ee.hex
+
+.PHONY: writeflash clean stats gdbinit
+
+### Make targets ###
+#all, disasm, stats, hex, writeflash/install, clean
+all: $(TRG)
+
+disasm: $(DUMPTRG) stats
+
+stats: $(TRG)
+  $(OBJDUMP) -h $(TRG)
+  $(SIZE) $(TRG)
+
+hex: $(HEXTRG)
+
+writeflash: hex
+  $(AVRDUDE) -c $(AVRDUDE_PROGRAMMERID)     \
+    -p $(PROGRAMMER_MCU) -P $(AVRDUDE_PORT) \
+    -e -U flash:w:$(HEXROMTRG)
+
+install: writeflash
+
+$(DUMPTRG): $(TRG)
+  $(OBJDUMP) -S $< > $@
+
+$(TRG): $(OBJDEPS)
+  $(CC) $(LDFLAGS) -o $(TRG) $(OBJDEPS)
+

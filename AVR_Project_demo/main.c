@@ -4,7 +4,6 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include "BitManip.h"
 
 #define TEST_PIN (1<<PA0)
 
@@ -17,9 +16,9 @@ int main(void)
 
   while(1)
   {
-    sbm(PORTA, TEST_PIN);
+    PORTA |= TEST_PIN;
     _delay_ms(delay_time);
-    cbm(PORTA, TEST_PIN);
+    PORTA &= ~TEST_PIN;
     _delay_ms(delay_time);
   }
 }

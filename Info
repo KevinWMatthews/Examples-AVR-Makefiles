@@ -1,0 +1,23 @@
+Compiling and linking (create .o file):
+avr-gcc -g -Os -mcu=<chip> -c demo.c
+
+Now link into a binary (create .elf file):
+avr-gcc -g -mcu=<chip> -o demo.elf demo.o
+
+We can analyze the binary (.elf) file using objdump:
+avr-objdump -h -S demo.elf > demo.lst
+  -h  will output how much space is used in each section
+  -S  Dissasemble the binary file and instersperce ith with source code
+
+A map file can be used to analyze code size and data size:
+(Like the above link command but with a flag to the linker added)
+avr-gcc -g -mmcu=<chip> -Wl,-Map,demo.map -o demo.elf demo.o
+
+Now, most processors will not accept a GNU executable.
+Extract portions of the binary (.elf) and save it into .hex files.
+avr-objcopy -j .text -j .data -O ihex demo.elf demo.hex
+  -j <section>    Extract data from the given segment (we're getting .text and .data)
+
+To program EEPROM:
+avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex demo.elf demo_eeprom.hex
+
