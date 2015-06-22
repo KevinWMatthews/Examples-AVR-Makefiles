@@ -1,0 +1,49 @@
+To compile source code (create .o file from each .c file):
+avr-gcc -g -Os -mmcu=attiny26 -c demo.c
+  -g  generate debugging information (for disassemblies; doesn't make it into the hex files)
+  -c  compile and assemble but do not link
+  -O  controls optimization:
+        <number>
+        fast      speed
+        g         debugging
+        s         space rather than speed
+  --mmcu=<chip>   type in an mmcu of ? to display all possible chips
+
+Now link all .o files into a binary (create .elf file):
+avr-gcc -g -mmcu=attiny26 -o demo.elf demo.o
+  -o  specify output file
+
+We can analyze the binary (.elf) file using objdump:
+avr-objdump -h -S demo.elf > demo.lst
+  -h  will output how much space is used in each section
+  -S  Dissasemble the binary file and instersperce ith with source code
+
+A map file can be used to analyze code size and data size:
+(Like the above link command but with a flag to the linker added)
+avr-gcc -g -mmcu=attiny26 -Wl,-Map,demo.map -o demo.elf demo.o
+
+Generate a .hex file to load into the chip.
+This must be done because most processors will not accept a GNU executable.
+Extract portions of the binary (.elf) and save it into .hex files.
+avr-objcopy -j .text -j .data -O ihex demo.elf demo.hex
+  -j <section>    Extract data from the given segment (we're getting .text and .data)
+
+If you wish to program EEPROM, use this special step:
+avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex demo.elf demo_eeprom.hex
+  (TODO the details because I'm not using this yet)
+
+
+
+  We will load the program onto the chip using avrdude:
+To verify communication link and read device signatures:
+sudo avrdude -p t26 -c avrispmkII -P usb
+  -p <partNumber>:
+  -c <programmer>:
+  -P <port>:       forces it to use USB. can leave this out
+
+sudo avrdude -p t26 -c avrispmkII -U flash:w:demo.hex:i
+  -U <memoryType>:r|w|v:<filename>[:format]
+
+      memoryType: flash, eeprom, hfuse, lfuse, efuse
+      r|w|v:      read, write, verify
+      format:     always using Intel Hex?

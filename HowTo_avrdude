@@ -1,5 +1,0 @@
-HowTo_avrdude
-
-avrdude -p t26 -c avrispmkII -P usb
-
-can leave out -P usb
