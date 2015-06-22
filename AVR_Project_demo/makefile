@@ -118,7 +118,7 @@ AVRDUDE_PROGRAMMERID=avrispmkII
 # port--serial or parallel port to which your
 # hardware programmer is attached
 #
-AVRDUDE_PORT=/dev/ttyS1
+AVRDUDE_PORT=usb
 
 
 ####################################################
@@ -207,11 +207,13 @@ LST=$(filter %.lst, $(OBJDEPS:.o=.lst))
 GENASMFILES=$(filter %.s, $(OBJDEPS:.o=.s))
 
 
+#According to the GNU manual, he is defining implicit dependencies using
+#Old-Fashioned Suffix Rules
 .SUFFIXES : .c .cc .cpp .C .o .out .s .S \
 	.hex .ee.hex .h .hh .hpp
 
 
-.PHONY: writeflash clean stats gdbinit
+.PHONY: writeflash clean stats gdbinit stats
 
 # Make targets:
 # all, disasm, stats, hex, writeflash/install, clean
@@ -227,7 +229,7 @@ hex: $(HEXTRG)
 
 
 writeflash: hex
-	$(AVRDUDE) -c $(AVRDUDE_PROGRAMMERID)   \
+	sudo $(AVRDUDE) -c $(AVRDUDE_PROGRAMMERID)   \
 	 -p $(PROGRAMMER_MCU) -P $(AVRDUDE_PORT) -e        \
 	 -U flash:w:$(HEXROMTRG)
 

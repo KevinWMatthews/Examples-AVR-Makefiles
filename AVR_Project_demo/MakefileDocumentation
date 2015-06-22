@@ -1,0 +1,39 @@
+### Documentation ###
+# $(filter <pattern> ..., <text>)
+# Keep only the text that matches the patters.
+
+#Compiler flags
+#-Wall  enable all compiler warnings
+#-Wstrict-prototypes  function must be declared with arguments that match the prototype (C only!)
+#-funsigned-bitfields  what are bitfields?
+#-funsigned-char       do we want that?
+#-fpack-struct  pack all structure members together without any holes
+#-fshort-enums  make enums as small as possible
+# -Wa,<assembler_option>,<assembler_option>,<...>
+#   -a[cdghlmns]=<file>  Turn on listings in a variety of ways
+#   -ahlmns=<...>
+#     -ah    include high-level source
+#     -al    include assmebly
+#     -am    include macro expansions
+#     -an    omit forms processing
+#     -as    include symbols
+#     =file  set the name of the listing file
+# $(firstword $(filter %.lst, %(<:.c=.lst)))
+
+# -x  specify the language explicitly
+# -Wa,<assembler_option>,<assembler_option>,<...>
+#   -gstabs  generate stabs debugging information for each assembler line
+ASMFLAGS=-I. $(INC) -Mmcu=$(MCU) \
+  -x assembler-with-cpp          \
+  -Wa,-gstabs,                   \
+  -ahlms=$(firstword $(<:.S=.lst) $(<.s=.lst))
+
+#linker flags
+#-Wl  specify that we're setting a linker option since we're accessing the linker indirectly (through gcc)
+#-Map  specify the map file.  Should be -Map= ? Guess not; the AVR manual does this too
+#-lm <library list>  Not sure why this isn't just -l
+
+
+$@  name of the target
+$<  name of the first prerequisite
+$^  name of all prerequesites

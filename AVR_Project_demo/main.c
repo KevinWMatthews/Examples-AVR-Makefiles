@@ -9,7 +9,7 @@
 
 int main(void)
 {
-  int delay_time = 2000;
+  int delay_time = 750;
 
   /* Configure pin as output */
   DDRA = TEST_PIN;

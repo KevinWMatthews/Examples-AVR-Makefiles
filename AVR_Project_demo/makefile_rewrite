@@ -1,0 +1,139 @@
+###############################
+### Target-Specific Details ###
+###############################
+PROJECT_NAME=Demo
+
+#mcu type according to avr-gcc
+MCU=attiny26
+
+#List all source files
+#TODO: Auto-detect
+SRC=main.c
+
+#Include directories (e.g. -I/path/to/dir)
+INC=
+
+#Libraries to link in (e.g. -lmylib)
+LIBS=
+
+#Optimization level
+#use s (size opt), 1, 2, 3, 0 (off), fast, g (debugging)
+OPTLEVEL=s
+
+########################
+### AVR Dude options ###
+########################
+#Fill in the part number that avrdude uses
+AVRDUDE_MCU=t26
+
+AVRDUDE_PROGRAMMERID=avrispmkII
+
+#port to which your hardware is attached
+AVRDUDE_PORT=usb
+
+
+
+
+###################
+### Config Done ###
+###################
+# You shouldn't (in general) need to edit
+# anything below this point.
+
+
+#############
+### Flags ###
+#############
+HEX_FORMAT=ihex
+
+#compiler flags
+CFLAGS=-I. $(INC) -g -mmcu=$(MCU) -O$(OPTLEVEL) \
+	-Wall -Wstrict-prototypes                   \
+	-funsigned-bitfields -funsigned-char        \
+	-fpack-struct -fshort-enums                 \
+#	-Wa,-ahlms=$(firstword $(filter %.lst, $(<:.c=.lst)))
+
+#linker flags
+LDFLAGS=-Wl,-Map,$(PROJECT_NAME).map -mmcu=$(MCU) -lm $(LIBS)
+
+
+###################
+### executables ###
+###################
+CC=avr-gcc
+OBJCOPY=avr-objcopy
+OBJDUMP=avr-objdump
+SIZE=avr-size
+AVRDUDE=avrdude
+REMOVE=rm -f
+
+####################
+### target names ###
+####################
+TARGET=$(PROJECT_NAME).elf
+DUMP_TARGET=$(PROJECT_NAME).s
+
+HEX_ROM_TARGET=$(PROJECT_NAME).hex
+HEX_TARGET=$(HEX_ROM_TARGET)
+
+# Define all object files
+CFILES=$(filter %.c, $(SRC))
+OBJDEPS=$(CFILES:.c=.o)
+# LST=$(filter %.lst, $(OBJDEPS:.o=.lst))
+
+# All the possible generated assembly files (.s files)
+# that could be made by disasm
+GENERATED_ASM_FILES=$(filter %.s, $(OBJDEPS:.o=.s))
+
+
+.PHONY: all install writeflash hex disasm stats clean help
+.PHONY:
+
+### Make targets ###
+#all, install/writeflash, hex, disasm, stats, clean, help
+all: $(TARGET)
+
+install: writeflash
+
+writeflash: hex
+	sudo $(AVRDUDE) -c $(AVRDUDE_PROGRAMMERID) -p $(AVRDUDE_MCU) -P $(AVRDUDE_PORT) \
+             -e -U flash:w:$(HEX_TARGET)
+
+hex: $(HEX_TARGET)
+
+disasm: $(DUMP_TARGET) stats
+
+stats: $(TARGET)
+	$(OBJDUMP) -h $(TARGET)
+	$(SIZE) $(TARGET)
+
+clean:
+	$(REMOVE) $(TARGET) $(PROJECT_NAME).map
+	$(REMOVE) $(OBJDEPS)
+	$(REMOVE) $(HEX_TARGET)
+	$(REMOVE) $(DUMP_TARGET) $(GENERATED_ASM_FILES)
+
+help:
+	@echo all:        Compile and link all source code, generate an .elf file (binary)
+	@echo install:    Create an Intel Hex file from the .elf and write it to chip's flash
+	@echo writeflash: Same as install.
+
+
+$(TARGET): $(OBJDEPS)
+	$(CC) $(LDFLAGS) -o $(TARGET) $(OBJDEPS)
+
+$(DUMP_TARGET): $(TARGET)
+	$(OBJDUMP) -S $< > $@
+
+
+### Generate files ###
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+#Assembly from .c
+%.s: %.c
+	$(CC) -S $(CFLAGS) $< -o $@
+
+#Chip-readable .hex file from compiler's binary file output, .elf
+%.hex: %.elf
+	$(OBJCOPY) -j .text -j .data -O $(HEX_FORMAT) $< $@
