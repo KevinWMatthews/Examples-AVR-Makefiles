@@ -1,4 +1,12 @@
+#####################
 ### Documentation ###
+#####################
+This example makefile also supports:
+  hand-coded assembly and c++
+  programming eeprom
+  gdb
+
+
 # $(filter <pattern> ..., <text>)
 # Keep only the text that matches the patters.
 
@@ -20,6 +28,15 @@
 #     =file  set the name of the listing file
 # $(firstword $(filter %.lst, %(<:.c=.lst)))
 
+
+#linker flags
+#-Wl  specify that we're setting a linker option since we're accessing the linker indirectly (through gcc)
+#-Map  specify the map file.  Should be -Map= ? Guess not; the AVR manual does this too
+#-lm <library list>  Not sure why this isn't just -l
+
+#######################
+### Assembler Flags ###
+#######################
 # -x  specify the language explicitly
 # -Wa,<assembler_option>,<assembler_option>,<...>
 #   -gstabs  generate stabs debugging information for each assembler line
@@ -28,10 +45,6 @@ ASMFLAGS=-I. $(INC) -Mmcu=$(MCU) \
   -Wa,-gstabs,                   \
   -ahlms=$(firstword $(<:.S=.lst) $(<.s=.lst))
 
-#linker flags
-#-Wl  specify that we're setting a linker option since we're accessing the linker indirectly (through gcc)
-#-Map  specify the map file.  Should be -Map= ? Guess not; the AVR manual does this too
-#-lm <library list>  Not sure why this isn't just -l
 
 
 $@  name of the target
